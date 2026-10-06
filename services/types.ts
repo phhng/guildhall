@@ -14,8 +14,9 @@ export interface Api {
   };
   guildhalls: { list(): Promise<S.GuildhallWithRole[]>; create(i: S.CreateGuildhallInput): Promise<S.GuildhallWithRole> };
   campaigns: { list(guildhallId: string): Promise<S.Campaign[]>; create(i: S.CreateCampaignInput): Promise<S.Campaign> };
-  quests: { list(campaignId: string): Promise<S.Quest[]>; create(i: S.CreateQuestInput): Promise<S.Quest>; move(i: S.MoveQuestInput): Promise<S.Quest>; assign(i: S.AssignQuestInput): Promise<S.Quest> };
+  quests: { list(campaignId: string): Promise<S.Quest[]>; create(i: S.CreateQuestInput): Promise<S.Quest>; move(i: S.MoveQuestInput): Promise<S.Quest>; assign(i: S.AssignQuestInput): Promise<S.Quest>; setDue(i: S.SetDueInput): Promise<S.Quest> };
   members: { list(guildhallId: string): Promise<S.Member[]> };
-  widgets: { list(campaignId: string): Promise<S.Widget[]>; move(i: S.MoveWidgetInput): Promise<S.Widget>; layout(i: S.SetLayoutInput): Promise<S.Widget[]> };
+  activity: { list(guildhallId: string, limit?: number): Promise<S.AuditEntry[]> };
+  widgets: { list(campaignId: string): Promise<S.Widget[]>; move(i: S.MoveWidgetInput): Promise<S.Widget>; layout(i: S.SetLayoutInput): Promise<S.Widget[]>; create(i: S.CreateWidgetInput): Promise<S.Widget>; remove(widgetId: string): Promise<void>; setConfig(i: S.SetConfigInput): Promise<S.Widget> };
   realtime: { subscribe(channel: string, handler: (e: RealtimeEvent) => void): () => void };
 }

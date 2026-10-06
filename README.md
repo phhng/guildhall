@@ -5,7 +5,7 @@ campaigns are projects, quests are tasks, and the War Room is a drag-and-drop da
 
 Runs on iOS, Android and the web from one Expo (React Native) codebase.
 
-**Status:** Phases 1 and 2 are complete. See `docs/PHASES.txt` for the full plan.
+**Status:** Phases 1 to 3 are complete. See `docs/PHASES.txt` for the full plan.
 Data is a mock, in-memory backend, so it resets when the app reloads.
 
 ## What you can do today
@@ -16,6 +16,8 @@ Data is a mock, in-memory backend, so it resets when the app reloads.
 - Quest Board: add quests and drag them between Backlog, In Progress, In Review and Slain.
 - Dice Roller: roll d4 to d20, or roll to assign the next Backlog quest to a party member.
 - Party Roster: see your party, their classes and roles.
+- Initiative Tracker, Boss Fight, Campaign Journal, Calendar of Sessions, XP and Achievements, and Activity Feed.
+- Spellbook: add or remove widgets. Undo and redo layout changes.
 
 ## Requirements
 
@@ -50,10 +52,14 @@ Press `w` for the browser, or scan the QR code with Expo Go.
 | Unlock editing | Press **Edit layout** (Guildmaster, Officer, Adventurer) |
 | Move a widget | Hold its title bar for a moment, then drag |
 | Resize a widget | Drag the corner triangle |
+| Add a widget | Tap it in the **Spellbook**, or hold and drag it onto the grid |
+| Delete widgets | Tap the X on a widget, or select some and press **Delete**, then confirm in the popup (Officer and above) |
+| Resize with buttons | Select widgets, then use **Width: + -** and **Height: + -** |
+| Undo or redo | **Undo** and **Redo** buttons in edit mode |
 | Lock the layout | Press **Done** |
 | Move a quest | Hold the card and drag sideways, or use the arrow buttons |
 
-Layout editing needs a screen at least two columns wide. On a phone held upright the War Room is a stacked view.
+Every screen size keeps its own layout, so a phone and a desktop can be arranged differently. Tick widgets by tapping their titles (or press Select all) to resize or delete several at once.
 
 ## Roles
 

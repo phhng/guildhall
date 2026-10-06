@@ -17,8 +17,8 @@ export const GuildhallSchema = z.object({ id, name, ownerId: id, createdAt: ts }
 export const MembershipSchema = z.object({ userId: id, guildhallId: id, role: RoleSchema });
 export const CampaignSchema = z.object({ id, guildhallId: id, name, description: z.string().max(280), createdAt: ts });
 export const QuestSchema = z.object({ id, campaignId: id, title: z.string().trim().min(1).max(120), description: z.string().max(2000), status: z.enum(QUEST_STATUSES), assigneeId: id.nullable(), order: z.number(), xp: z.number().int().min(0).max(1000), dueAt: ts.nullable() });
-export const WidgetSchema = z.object({ id, campaignId: id, type: z.enum(WIDGET_TYPES), x: z.number().int().min(0), y: z.number().int().min(0), w: z.number().int().min(1).max(6), h: z.number().int().min(1).max(12), config: z.record(z.string(), z.unknown()) });
-export const AuditEntrySchema = z.object({ id, at: ts, actorId: id, action: z.string(), target: z.string(), ok: z.boolean(), detail: z.string().optional() });
+export const WidgetSchema = z.object({ id, campaignId: id, type: z.enum(WIDGET_TYPES), x: z.number().int().min(0), y: z.number().int().min(0), w: z.number().int().min(1).max(6), h: z.number().int().min(1).max(12), config: z.record(z.string(), z.unknown()), layouts: z.record(z.string(), z.object({ x: z.number().int().min(0), y: z.number().int().min(0), w: z.number().int().min(1).max(6), h: z.number().int().min(1).max(12) })) });
+export const AuditEntrySchema = z.object({ id, at: ts, actorId: id, action: z.string(), target: z.string(), ok: z.boolean(), detail: z.string().optional(), guildhallId: id.optional() });
 
 // ----- inputs (used by forms AND the service layer) -----
 export const SignUpSchema = z.object({ email: z.string().trim().toLowerCase().email('Enter a valid email.'), password: z.string().min(8, 'Password needs 8+ characters.').max(128), displayName: name });
@@ -52,8 +52,29 @@ export type MoveWidgetInput = z.input<typeof MoveWidgetSchema>;
 
 // ----- Phase 2 additions -----
 export const AssignQuestSchema = z.object({ questId: id, assigneeId: id.nullable() });
-export const SetLayoutSchema = z.object({ campaignId: id, items: z.array(MoveWidgetSchema).min(1).max(50) });
+// Layouts are stored per column count ("1".."6") so phones and desktops each keep their own arrangement.
+export const SetLayoutSchema = z.object({ campaignId: id, cols: z.number().int().min(1).max(6), items: z.array(MoveWidgetSchema).min(1).max(50) });
 export const MemberSchema = z.object({ userId: id, displayName: name, avatar: z.string().nullable(), characterClass: ClassSchema.nullable(), role: RoleSchema });
 export type AssignQuestInput = z.input<typeof AssignQuestSchema>;
 export type SetLayoutInput = z.input<typeof SetLayoutSchema>;
 export type Member = z.infer<typeof MemberSchema>;
+
+// ----- Phase 3 additions -----
+export const CreateWidgetSchema = z.object({ campaignId: id, type: z.enum(WIDGET_TYPES), x: z.number().int().min(0).max(5).default(0), y: z.number().int().min(0).max(1000).default(1000), w: z.number().int().min(1).max(6), h: z.number().int().min(1).max(12) });
+export const SetConfigSchema = z.object({ widgetId: id, config: z.record(z.string(), z.unknown()) });
+export const SetDueSchema = z.object({ questId: id, dueAt: ts.nullable() });
+// Per-widget config, validated by the service on every write and reused by the UI registry.
+export const CONFIG_SCHEMAS = {
+  questBoard: z.object({}),
+  initiative: z.object({ order: z.array(id).max(50).default([]), turn: z.number().int().min(0).max(50).default(0) }),
+  dice: z.object({ sides: z.number().int().min(2).max(100).default(20) }),
+  bossFight: z.object({ name: z.string().trim().min(1).max(60).default('The Backlog Dragon'), linked: z.array(id).max(100).default([]) }),
+  roster: z.object({}),
+  journal: z.object({ notes: z.string().max(5000).default('') }),
+  calendar: z.object({}),
+  xp: z.object({}),
+  activity: z.object({}),
+} satisfies Record<(typeof WIDGET_TYPES)[number], z.ZodTypeAny>;
+export type CreateWidgetInput = z.input<typeof CreateWidgetSchema>;
+export type SetConfigInput = z.input<typeof SetConfigSchema>;
+export type SetDueInput = z.input<typeof SetDueSchema>;

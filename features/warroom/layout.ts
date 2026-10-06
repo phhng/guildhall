@@ -1,3 +1,5 @@
+import type { Widget } from '@/services/schemas';
+
 export interface LayoutItem { id: string; x: number; y: number; w: number; h: number }
 
 // Phone 1, tablet 2-3, web 4-6 columns, from the measured grid width.
@@ -34,3 +36,8 @@ export const changedItems = (next: LayoutItem[], prev: LayoutItem[]) =>
     const p = prev.find((i) => i.id === n.id);
     return !p || p.x !== n.x || p.y !== n.y || p.w !== n.w || p.h !== n.h;
   });
+
+// Stored cell for this column count, falling back to the widget's base position.
+export const rawCells = (widgets: Widget[], cols: number): LayoutItem[] =>
+  widgets.map((wd) => ({ id: wd.id, ...(wd.layouts[String(cols)] ?? { x: wd.x, y: wd.y, w: wd.w, h: wd.h }) }));
+export const cellsFor = (widgets: Widget[], cols: number) => layout(rawCells(widgets, cols), null, cols);
