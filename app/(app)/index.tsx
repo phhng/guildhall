@@ -11,10 +11,11 @@ export default function Guildhalls() {
   const user = useAuth((s) => s.user);
   const { guildhalls, error, loadGuildhalls, createGuildhall, selectGuildhall } = useWorkspace();
   const [name, setName] = useState('');
-  useEffect(() => { loadGuildhalls(); }, [loadGuildhalls]);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => { loadGuildhalls().finally(() => setLoaded(true)); }, [loadGuildhalls]);
 
   return (
-    <Screen>
+    <Screen loading={!loaded}>
       <Heading size={26}>Welcome, {user?.avatar} {user?.displayName}</Heading>
       <ErrorBanner message={error} />
       {guildhalls.length === 0 && <Txt muted>You have no guildhall yet. Found one below to start your first campaign.</Txt>}

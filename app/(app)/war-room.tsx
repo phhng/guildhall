@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ErrorBanner, GoldButton, Txt } from '@/components/ui';
+import { GoldButton, Txt } from '@/components/ui';
 import { Grid } from '@/features/warroom/Grid';
 import { Spellbook } from '@/features/warroom/Spellbook';
 import { WIDGETS } from '@/features/widgets/registry';
@@ -10,14 +10,16 @@ import { can } from '@/services/permissions';
 import { useWarRoom } from '@/store/warRoomStore';
 import { useRole, useWorkspace } from '@/store/workspaceStore';
 import { useTheme } from '@/theme/useTheme';
+import { useRouteReadiness } from '@/components/routeLoading';
 
 export default function WarRoom() {
   const { c, space } = useTheme();
   const campaignId = useWorkspace((s) => s.campaignId);
   const role = useRole();
-  const { widgets, edit, error, loading, load, commit, setEdit, addWidget, removeWidgets } = useWarRoom();
+  const { widgets, edit, loading, load, commit, setEdit, addWidget, removeWidgets } = useWarRoom();
   const [holding, setHolding] = useState(false); // freezes page scroll while a widget is held
   const mayEdit = can(role, 'widget.move');
+  useRouteReadiness(!campaignId || !loading);
 
   useEffect(() => {
     if (!campaignId) return;
@@ -37,7 +39,6 @@ export default function WarRoom() {
           </Txt>
           {mayEdit && <GoldButton label={edit ? 'Done' : 'Edit layout'} variant={edit ? 'primary' : 'ghost'} onPress={() => setEdit(!edit)} />}
         </View>
-        <ErrorBanner message={error} />
         {editing && can(role, 'widget.create') && <Spellbook onAdd={(type) => addWidget(campaignId, 1, type, WIDGETS[type].defaultSize)} />}
         {loading ? <Txt muted>Unrolling the war map...</Txt> : (
           <Grid widgets={widgets} campaignId={campaignId} edit={editing} canRemove={can(role, 'widget.delete')}

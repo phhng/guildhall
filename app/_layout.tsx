@@ -1,19 +1,21 @@
-import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Cinzel_700Bold } from '@expo-google-fonts/cinzel';
 import { CrimsonText_400Regular, CrimsonText_600SemiBold, useFonts } from '@expo-google-fonts/crimson-text';
-import { Slot, useRouter, useSegments } from 'expo-router';
+import { Slot, usePathname, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuth } from '@/store/authStore';
 import { useTheme } from '@/theme/useTheme';
+import { RouteTransition } from '@/components/routeLoading';
+import { ErrorAlertHost } from '@/components/ErrorAlertHost';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Cinzel_700Bold, CrimsonText_400Regular, CrimsonText_600SemiBold });
   const { c, mode } = useTheme();
   const { status, user, hydrate } = useAuth();
   const segments = useSegments() as string[];
+  const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => { hydrate(); }, [hydrate]);
@@ -35,7 +37,10 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: c.bg }}>
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
-      <Slot />
+      <RouteTransition pathname={pathname}>
+        <Slot />
+      </RouteTransition>
+      <ErrorAlertHost />
     </GestureHandlerRootView>
   );
 }

@@ -1,5 +1,5 @@
 import { ScrollView, Text, View } from 'react-native';
-import { ErrorBanner, Txt } from '@/components/ui';
+import { Txt } from '@/components/ui';
 import { CLASS_INFO } from '@/features/character/classes';
 import { useCampaignData } from '@/features/warroom/useCampaignData';
 import { ROLE_LABEL } from '@/services/permissions';
@@ -8,10 +8,9 @@ import type { WidgetProps } from './types';
 
 export function PartyRoster({ campaignId }: WidgetProps) {
   const { c } = useTheme();
-  const { members, error } = useCampaignData(campaignId);
+  const { members } = useCampaignData(campaignId);
   return (
     <ScrollView contentContainerStyle={{ padding: 10, gap: 8 }}>
-      <ErrorBanner message={error} />
       {members.map((m) => {
         const cls = m.characterClass ? CLASS_INFO[m.characterClass] : null;
         return (

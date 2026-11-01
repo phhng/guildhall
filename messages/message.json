@@ -1,0 +1,9 @@
+{
+  "alerts": {
+    "errorTitle": "Something went wrong",
+    "dismissHint": "Swipe to dismiss"
+  },
+  "errors": {
+    "unexpected": "Something went wrong in the hall. Try again."
+  }
+}

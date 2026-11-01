@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { ErrorBanner, Txt } from '@/components/ui';
+import { Txt } from '@/components/ui';
 import { useCampaignData } from '@/features/warroom/useCampaignData';
 import { CONFIG_SCHEMAS } from '@/services/schemas';
 import { useTheme } from '@/theme/useTheme';
@@ -11,7 +11,7 @@ import { useWidgetConfig } from './useWidgetConfig';
 // Shared HP = XP of the linked quests (all quests if none are linked) that are not yet slain.
 export function BossFight({ widget, campaignId }: WidgetProps) {
   const { c, fonts, radius } = useTheme();
-  const { quests, error, setError } = useCampaignData(campaignId);
+  const { quests, setError } = useCampaignData(campaignId);
   const { config, save } = useWidgetConfig(widget, CONFIG_SCHEMAS.bossFight);
   const [name, setName] = useState(config.name);
   useEffect(() => setName(config.name), [config.name]);
@@ -29,7 +29,6 @@ export function BossFight({ widget, campaignId }: WidgetProps) {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 10, gap: 10 }}>
-      <ErrorBanner message={error} />
       <TextInput accessibilityLabel="Boss name" value={name} onChangeText={setName} maxLength={60}
         onEndEditing={() => { if (name.trim() && name !== config.name) run({ name }); }}
         style={{ fontFamily: fonts.display, fontSize: 20, color: slain ? c.textMuted : c.gold, paddingVertical: 4 }} />

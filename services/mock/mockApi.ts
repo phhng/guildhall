@@ -1,5 +1,5 @@
 import { randomId, randomToken, sha256 } from '@/utils/crypto';
-import { appendAudit } from '../audit';
+import { appendAudit, readAudit } from '../audit';
 import { AppError, parse } from '../errors';
 import { can, ROLE_LABEL, type Action } from '../permissions';
 import { rateLimit } from '../rateLimit';
@@ -44,12 +44,12 @@ async function mutate<T>(action: Action, guildhallId: string, target: string, fn
   await sleep();
   const { user, role } = requireMember(guildhallId);
   if (!can(role, action)) {
-    appendAudit({ actorId: user.id, action, target, ok: false, detail: `denied for ${role}` });
+    appendAudit({ actorId: user.id, action, target, ok: false, detail: `denied for ${role}`, guildhallId });
     throw new AppError('FORBIDDEN', `A ${ROLE_LABEL[role]} cannot do that.`);
   }
   rateLimit(`${user.id}:${action}`, 30, 10_000);
   const out = fn(user);
-  appendAudit({ actorId: user.id, action, target, ok: true });
+  appendAudit({ actorId: user.id, action, target, ok: true, guildhallId });
   if (channel) bus.publish(channel, { type: action, by: user.id });
   return out;
 }
@@ -62,10 +62,11 @@ function openSession(user: S.User): Session {
 }
 const seedWidgets = (campaignId: string) => {
   const mk = (type: S.WidgetType, x: number, y: number, w: number, h: number) =>
-    widgets.push({ id: randomId('wid_'), campaignId, type, x, y, w, h, config: {} });
-  mk('questBoard', 0, 0, 2, 4); mk('dice', 2, 0, 1, 2); mk('roster', 2, 2, 1, 2);
+    widgets.push({ id: randomId('wid_'), campaignId, type, x, y, w, h, config: {}, layouts: {} });
+  mk('questBoard', 0, 0, 2, 4); mk('dice', 2, 0, 1, 2); mk('roster', 2, 2, 1, 2); mk('bossFight', 0, 4, 2, 2); mk('activity', 2, 4, 1, 2);
 };
 
+// TODO: Replace mock API with real API
 export const mockApi: Api = {
   auth: {
     async signUp(raw) {
@@ -110,6 +111,16 @@ export const mockApi: Api = {
       appendAudit({ actorId: user.id, action: 'character.create', target: user.id, ok: true });
       return { ...next };
     },
+    async updateProfile(raw) {
+      await sleep();
+      const user = actor();
+      const i = parse(S.UpdateProfileSchema, raw);
+      rateLimit(`${user.id}:profile.update`, 5, 60_000);
+      const next = { ...user, ...i };
+      users.set(user.id, next);
+      appendAudit({ actorId: user.id, action: 'profile.update', target: user.id, ok: true });
+      return { ...next };
+    },
   },
   guildhalls: {
     async list() {
@@ -125,7 +136,7 @@ export const mockApi: Api = {
       const g: S.Guildhall = { id: randomId('gld_'), name: i.name, ownerId: user.id, createdAt: Date.now() };
       guildhalls.push(g);
       memberships.push({ userId: user.id, guildhallId: g.id, role: 'guildmaster' });
-      appendAudit({ actorId: user.id, action: 'guildhall.create', target: g.id, ok: true });
+      appendAudit({ actorId: user.id, action: 'guildhall.create', target: g.id, ok: true, guildhallId: g.id });
       return { ...g, role: 'guildmaster' };
     },
   },
@@ -154,10 +165,29 @@ export const mockApi: Api = {
     async create(raw) {
       const i = parse(S.CreateQuestSchema, raw);
       return mutate('quest.create', campaignOf(i.campaignId).guildhallId, `campaign:${i.campaignId}`, () => {
-        const q: S.Quest = { id: randomId('qst_'), campaignId: i.campaignId, title: i.title, description: i.description, status: 'backlog', assigneeId: null, order: Date.now(), xp: i.xp, dueAt: null };
+        const q: S.Quest = {
+          id: randomId('qst_'), campaignId: i.campaignId, title: i.title, description: i.description,
+          notes: i.notes, priority: i.priority, status: 'backlog', assigneeId: null, order: Date.now(), xp: i.xp, dueAt: i.dueAt,
+        };
         quests.push(q);
         return { ...q };
       }, `campaign:${i.campaignId}`);
+    },
+    async update(raw) {
+      const i = parse(S.UpdateQuestSchema, raw);
+      const q = quests.find((x) => x.id === i.questId);
+      if (!q) throw new AppError('NOT_FOUND', 'Quest not found.');
+      return mutate('quest.update', campaignOf(q.campaignId).guildhallId, `quest:${q.id}`, () => {
+        Object.assign(q, { title: i.title, description: i.description, notes: i.notes, priority: i.priority, dueAt: i.dueAt });
+        return { ...q };
+      }, `campaign:${q.campaignId}`);
+    },
+    async delete(raw) {
+      const i = parse(S.DeleteQuestSchema, raw);
+      const index = quests.findIndex((x) => x.id === i.questId);
+      if (index < 0) throw new AppError('NOT_FOUND', 'Quest not found.');
+      const q = quests[index];
+      await mutate('quest.delete', campaignOf(q.campaignId).guildhallId, `quest:${q.id}`, () => { quests.splice(index, 1); }, `campaign:${q.campaignId}`);
     },
     async move(raw) {
       const i = parse(S.MoveQuestSchema, raw);
@@ -175,6 +205,12 @@ export const mockApi: Api = {
       const gid = campaignOf(q.campaignId).guildhallId;
       if (i.assigneeId && !memberships.some((m) => m.userId === i.assigneeId && m.guildhallId === gid)) throw new AppError('VALIDATION', 'That adventurer is not in this guildhall.');
       return mutate('quest.move', gid, `quest:${q.id}`, () => { q.assigneeId = i.assigneeId; return { ...q }; }, `campaign:${q.campaignId}`);
+    },
+    async setDue(raw) {
+      const i = parse(S.SetDueSchema, raw);
+      const q = quests.find((x) => x.id === i.questId);
+      if (!q) throw new AppError('NOT_FOUND', 'Quest not found.');
+      return mutate('quest.move', campaignOf(q.campaignId).guildhallId, `quest:${q.id}`, () => { q.dueAt = i.dueAt; return { ...q }; }, `campaign:${q.campaignId}`);
     },
   },
   members: {
@@ -202,19 +238,49 @@ export const mockApi: Api = {
         return { ...widget };
       }, `campaign:${widget.campaignId}`);
     },
-    // One audited, atomic write for a whole drop (moved widget + any widgets it pushed).
+    // One audited, atomic write for a whole drop. Stored per column count (cols).
     async layout(raw) {
       const i = parse(S.SetLayoutSchema, raw);
       const camp = campaignOf(i.campaignId);
       return mutate('widget.move', camp.guildhallId, `layout:${i.campaignId}`, () => {
         const targets = i.items.map((it) => {
-          const w = widgets.find((x) => x.id === it.widgetId && x.campaignId === i.campaignId);
-          if (!w) throw new AppError('NOT_FOUND', 'Widget not found.');
-          return { w, it };
+          const wd = widgets.find((x) => x.id === it.widgetId && x.campaignId === i.campaignId);
+          if (!wd) throw new AppError('NOT_FOUND', 'Widget not found.');
+          return { wd, it };
         });
-        targets.forEach(({ w, it }) => Object.assign(w, { x: it.x, y: it.y, w: it.w, h: it.h }));
-        return widgets.filter((w) => w.campaignId === i.campaignId).map((w) => ({ ...w }));
+        targets.forEach(({ wd, it }) => { wd.layouts = { ...wd.layouts, [String(i.cols)]: { x: it.x, y: it.y, w: it.w, h: it.h } }; });
+        return widgets.filter((x) => x.campaignId === i.campaignId).map((x) => ({ ...x }));
       }, `campaign:${i.campaignId}`);
+    },
+    async create(raw) {
+      const i = parse(S.CreateWidgetSchema, raw);
+      const camp = campaignOf(i.campaignId);
+      return mutate('widget.create', camp.guildhallId, `widget:${i.type}`, () => {
+        const wd: S.Widget = { id: randomId('wid_'), campaignId: i.campaignId, type: i.type, x: i.x, y: i.y, w: i.w, h: i.h, config: S.CONFIG_SCHEMAS[i.type].parse({}) as Record<string, unknown>, layouts: {} };
+        widgets.push(wd);
+        return { ...wd };
+      }, `campaign:${i.campaignId}`);
+    },
+    async remove(widgetId) {
+      const idx = widgets.findIndex((x) => x.id === widgetId);
+      if (idx < 0) throw new AppError('NOT_FOUND', 'Widget not found.');
+      const wd = widgets[idx];
+      await mutate('widget.delete', campaignOf(wd.campaignId).guildhallId, `widget:${wd.id}`, () => { widgets.splice(widgets.indexOf(wd), 1); }, `campaign:${wd.campaignId}`);
+    },
+    async setConfig(raw) {
+      const i = parse(S.SetConfigSchema, raw);
+      const wd = widgets.find((x) => x.id === i.widgetId);
+      if (!wd) throw new AppError('NOT_FOUND', 'Widget not found.');
+      const config = parse(S.CONFIG_SCHEMAS[wd.type], i.config) as Record<string, unknown>; // per-type validation
+      return mutate('widget.move', campaignOf(wd.campaignId).guildhallId, `config:${wd.id}`, () => { wd.config = config; return { ...wd }; }, `campaign:${wd.campaignId}`);
+    },
+  },
+  activity: {
+    // TODO(phase4): the full audit log (incl. denied actions) is Officer-only; this feed shows successful, non-auth events.
+    async list(guildhallId, limit = 30) {
+      await sleep(60);
+      requireMember(guildhallId);
+      return readAudit().filter((e) => e.guildhallId === guildhallId && e.ok).slice(-limit).reverse();
     },
   },
   realtime: {

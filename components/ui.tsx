@@ -2,9 +2,11 @@ import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View, type StyleProp, type TextInputProps, type TextProps, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme/useTheme';
+import { useRouteReadiness } from './routeLoading';
 
-export function Screen({ children, headerless }: { children: ReactNode; headerless?: boolean }) {
+export function Screen({ children, headerless, loading = false }: { children: ReactNode; headerless?: boolean; loading?: boolean }) {
   const { c, space } = useTheme();
+  useRouteReadiness(!loading);
   return (
     <SafeAreaView edges={headerless ? undefined : ['left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: space.md, gap: space.md, width: '100%', maxWidth: 640, alignSelf: 'center' }}>
@@ -35,14 +37,14 @@ export function Panel({ children, parchment, style }: { children: ReactNode; par
   );
 }
 
-export function GoldButton({ label, onPress, variant = 'primary', disabled, loading }: { label: string; onPress: () => void; variant?: 'primary' | 'ghost'; disabled?: boolean; loading?: boolean }) {
+export function GoldButton({ label, onPress, variant = 'primary', disabled, loading, style }: { label: string; onPress: () => void; variant?: 'primary' | 'ghost'; disabled?: boolean; loading?: boolean; style?: StyleProp<ViewStyle> }) {
   const { c, fonts, radius } = useTheme();
   const primary = variant === 'primary';
   return (
     <Pressable
       accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !!(disabled || loading), busy: !!loading }}
       disabled={disabled || loading} onPress={onPress}
-      style={({ pressed }) => ({ minHeight: 48, minWidth: 48, paddingHorizontal: 20, borderRadius: radius, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: c.gold, backgroundColor: primary ? c.gold : 'transparent', opacity: disabled ? 0.5 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+      style={({ pressed }) => [{ minHeight: 48, minWidth: 48, paddingHorizontal: 20, borderRadius: radius, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: c.gold, backgroundColor: primary ? c.gold : 'transparent', opacity: disabled ? 0.5 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }, style]}>
       {loading ? <ActivityIndicator color={primary ? c.onGold : c.gold} /> : <Text style={{ fontFamily: fonts.display, fontSize: 15, letterSpacing: 1, color: primary ? c.onGold : c.gold }}>{label}</Text>}
     </Pressable>
   );

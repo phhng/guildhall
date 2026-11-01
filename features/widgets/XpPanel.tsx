@@ -1,5 +1,6 @@
-import { ScrollView, Text, View } from 'react-native';
+import { Image, ScrollView, Text, View } from 'react-native';
 import { Txt } from '@/components/ui';
+import { achievementsFor } from '@/features/achievements/catalog';
 import { useCampaignData } from '@/features/warroom/useCampaignData';
 import { useSettings } from '@/store/settingsStore';
 import { useTheme } from '@/theme/useTheme';
@@ -17,12 +18,7 @@ export function XpPanel({ campaignId }: WidgetProps) {
   const xp = slain.reduce((s, q) => s + q.xp, 0);
   const lvl = levelOf(xp), from = 50 * (lvl - 1) ** 2, to = 50 * lvl ** 2;
   const pct = Math.min(1, (xp - from) / (to - from));
-  const badges = [
-    { label: 'First Blood', earned: slain.length >= 1, hint: 'Slay your first quest' },
-    { label: 'Slayed the Backlog Dragon', earned: quests.length > 0 && !quests.some((q) => q.status === 'backlog'), hint: 'Empty the Backlog' },
-    { label: 'Full Party', earned: members.length >= 3, hint: 'Gather three adventurers' },
-    { label: 'Century', earned: xp >= 100, hint: 'Earn 100 XP' },
-  ];
+  const badges = achievementsFor(quests, members);
   const board = members.map((m) => ({ m, xp: slain.filter((q) => q.assigneeId === m.userId).reduce((s, q) => s + q.xp, 0) })).sort((a, b) => b.xp - a.xp);
   return (
     <ScrollView contentContainerStyle={{ padding: 10, gap: 10 }}>
@@ -33,7 +29,10 @@ export function XpPanel({ campaignId }: WidgetProps) {
       <Txt muted style={{ fontSize: 15 }}>{xp} XP, {to - xp} to level {lvl + 1}</Txt>
       <Txt bold>Badges</Txt>
       {badges.map((b) => (
-        <Txt key={b.label} accessibilityLabel={`${b.label}, ${b.earned ? 'earned' : 'locked'}`} muted={!b.earned} style={{ fontSize: 16 }}>{b.earned ? '🏅' : '🔒'} {b.label}{b.earned ? '' : ` (${b.hint})`}</Txt>
+        <View key={b.id} accessibilityLabel={`${b.title}, ${b.isEarned ? 'earned' : `locked: ${b.unlockHint}`}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: b.isEarned ? 1 : 0.55 }}>
+          <Image source={b.icon} style={{ width: 24, height: 24 }} resizeMode="contain" />
+          <Txt muted={!b.isEarned} style={{ flex: 1, fontSize: 16 }}>{b.title}{b.isEarned ? '' : ` (${b.unlockHint})`}</Txt>
+        </View>
       ))}
       <Txt bold>Leaderboard</Txt>
       {board.map(({ m, xp: x }) => <Txt key={m.userId} style={{ fontSize: 16 }}>{m.avatar ?? '👤'} {m.displayName}: {x} XP (level {levelOf(x)})</Txt>)}

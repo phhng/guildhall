@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { api } from '@/services';
 import { errorMessage } from '@/services/errors';
 import { tokenStorage } from '@/services/secureStorage';
-import type { CharacterInput, SignInInput, SignUpInput, User } from '@/services/schemas';
+import type { CharacterInput, SignInInput, SignUpInput, UpdateProfileInput, User } from '@/services/schemas';
 import type { Session } from '@/services/types';
 import { useWorkspace } from './workspaceStore';
 
@@ -13,6 +13,7 @@ interface AuthState {
   signIn(i: SignInInput): Promise<void>;
   signUp(i: SignUpInput): Promise<void>;
   createCharacter(i: CharacterInput): Promise<void>;
+  updateProfile(i: UpdateProfileInput): Promise<boolean>;
   signOut(): Promise<void>;
   clearError(): void;
 }
@@ -34,6 +35,11 @@ export const useAuth = create<AuthState>((set) => {
     signIn: (i) => run(async () => begin(await api.auth.signIn(i))),
     signUp: (i) => run(async () => begin(await api.auth.signUp(i))),
     createCharacter: (i) => run(async () => { set({ user: await api.auth.createCharacter(i) }); }),
+    updateProfile: async (i) => {
+      let updated = false;
+      await run(async () => { set({ user: await api.auth.updateProfile(i) }); updated = true; });
+      return updated;
+    },
     signOut: async () => {
       await api.auth.signOut(); await tokenStorage.remove(TOKEN_KEY);
       useWorkspace.getState().reset(); set({ user: null, status: 'out', error: null });

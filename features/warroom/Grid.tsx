@@ -176,7 +176,7 @@ function Tile({ item, m, edit, title, selected, children, onToggle, onRemove, on
 
   const anim = useAnimatedStyle(() => ({
     position: 'absolute' as const, left: left.value, top: top.value, width: width.value, height: height.value,
-    zIndex: active.value ? 20 : 1, transform: [{ scale: 1 + 0.03 * lift.value }],
+    zIndex: active.value ? 20 : 1,
     shadowOpacity: 0.3 + 0.4 * lift.value, shadowRadius: 8 + 14 * lift.value, elevation: 4 + 10 * lift.value,
   }));
   const noSelect = Platform.OS === 'web' ? ({ userSelect: 'none' } as object) : null;

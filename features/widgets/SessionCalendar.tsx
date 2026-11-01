@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { ErrorBanner, Txt } from '@/components/ui';
+import { Txt } from '@/components/ui';
 import { useCampaignData } from '@/features/warroom/useCampaignData';
 import { api } from '@/services';
 import { errorMessage } from '@/services/errors';
@@ -13,7 +13,7 @@ const same = (a: Date, y: number, m: number, d: number) => a.getFullYear() === y
 // Quest deadlines are shown as "session dates". Pick a day, then pick an unscheduled quest to schedule it.
 export function SessionCalendar({ campaignId }: WidgetProps) {
   const { c, fonts, radius } = useTheme();
-  const { quests, error, setError } = useCampaignData(campaignId);
+  const { quests, setError } = useCampaignData(campaignId);
   const now = new Date();
   const [cur, setCur] = useState({ y: now.getFullYear(), m: now.getMonth() });
   const [sel, setSel] = useState<number | null>(null);
@@ -31,7 +31,6 @@ export function SessionCalendar({ campaignId }: WidgetProps) {
   );
   return (
     <ScrollView contentContainerStyle={{ padding: 10, gap: 8 }}>
-      <ErrorBanner message={error} />
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         {nav(-1, 'Previous month')}
         <Text accessibilityRole="header" style={{ fontFamily: fonts.display, color: c.gold, fontSize: 16 }}>{MONTHS[cur.m]} {cur.y}</Text>

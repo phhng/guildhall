@@ -3,6 +3,7 @@ import { api } from '@/services';
 import { errorMessage } from '@/services/errors';
 import type { Widget, WidgetType } from '@/services/schemas';
 import { cellsFor, layout, rawCells, type LayoutItem } from '@/features/warroom/layout';
+import { useErrorAlert } from './errorAlertStore';
 
 interface Snap { cols: number; items: LayoutItem[] }
 const MAX_HISTORY = 50;
@@ -29,7 +30,7 @@ export const useWarRoom = create<WarRoomState>((set, get) => {
     try {
       set({ widgets: await api.widgets.layout({ campaignId, cols, items: items.map((i) => ({ widgetId: i.id, x: i.x, y: i.y, w: i.w, h: i.h })) }) });
       return true;
-    } catch (e) { set({ widgets: prev, error: errorMessage(e) }); return false; }
+    } catch (e) { const message = errorMessage(e); useErrorAlert.getState().show(message); set({ widgets: prev, error: message }); return false; }
   };
   const step = async (campaignId: string, from: 'past' | 'future', to: 'past' | 'future') => {
     const stack = get()[from];
@@ -45,7 +46,7 @@ export const useWarRoom = create<WarRoomState>((set, get) => {
     load: async (campaignId, silent) => {
       if (!silent) set({ loading: true, widgets: [], past: [], future: [] });
       try { set({ widgets: await api.widgets.list(campaignId), loading: false }); }
-      catch (e) { set({ error: errorMessage(e), loading: false }); }
+      catch (e) { const message = errorMessage(e); useErrorAlert.getState().show(message); set({ error: message, loading: false }); }
     },
     setEdit: (edit) => set({ edit, error: null }),
     commit: async (campaignId, cols, items, before) => {
@@ -59,7 +60,7 @@ export const useWarRoom = create<WarRoomState>((set, get) => {
         const wd = await api.widgets.create({ campaignId, type, x: cell?.x ?? 0, y: cell?.y ?? 1000, w: size.w, h: size.h });
         set((s) => ({ widgets: [...s.widgets, wd], past: [], future: [], error: null }));
         if (cell) await write(campaignId, cols, layout(rawCells(get().widgets, cols), wd.id, cols));
-      } catch (e) { set({ error: errorMessage(e) }); }
+      } catch (e) { const message = errorMessage(e); useErrorAlert.getState().show(message); set({ error: message }); }
     },
     // Removes one at a time so each delete is permission-checked, rate-limited and audited. Stops at the first rejection.
     removeWidgets: async (_campaignId, widgetIds) => {
@@ -67,7 +68,7 @@ export const useWarRoom = create<WarRoomState>((set, get) => {
       try {
         for (const id of widgetIds) { await api.widgets.remove(id); removed.push(id); }
         set({ error: null });
-      } catch (e) { set({ error: errorMessage(e) }); }
+      } catch (e) { const message = errorMessage(e); useErrorAlert.getState().show(message); set({ error: message }); }
       if (removed.length) set((s) => ({ widgets: s.widgets.filter((w) => !removed.includes(w.id)), past: [], future: [] }));
     },
   };

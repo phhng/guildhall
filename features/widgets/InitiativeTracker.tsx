@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
-import { ErrorBanner, GoldButton, Txt } from '@/components/ui';
+import { GoldButton, Txt } from '@/components/ui';
 import { useCampaignData } from '@/features/warroom/useCampaignData';
 import { CONFIG_SCHEMAS, type Member } from '@/services/schemas';
 import { useTheme } from '@/theme/useTheme';
@@ -13,7 +13,7 @@ import { useWidgetConfig } from './useWidgetConfig';
 const ROW = 56;
 
 export function InitiativeTracker({ widget, campaignId }: WidgetProps) {
-  const { members, error, setError } = useCampaignData(campaignId);
+  const { members, setError } = useCampaignData(campaignId);
   const { config, save } = useWidgetConfig(widget, CONFIG_SCHEMAS.initiative);
   const ordered = useMemo(() => {
     const byId = new Map(members.map((m) => [m.userId, m]));
@@ -32,7 +32,6 @@ export function InitiativeTracker({ widget, campaignId }: WidgetProps) {
   };
   return (
     <ScrollView contentContainerStyle={{ padding: 10, gap: 8 }}>
-      <ErrorBanner message={error} />
       <GoldButton label="Next turn" onPress={() => persist(ordered.map((m) => m.userId), (turn + 1) % Math.max(n, 1))} disabled={n === 0} />
       <Txt muted style={{ fontSize: 15 }}>Hold a row and drag to change the turn order, or use the arrows.</Txt>
       {ordered.map((m, i) => <Row key={m.userId} m={m} index={i} n={n} active={i === turn} onReorder={reorder} />)}

@@ -11,10 +11,11 @@ export default function Campaigns() {
   const { campaigns, error, loadCampaigns, createCampaign, selectCampaign } = useWorkspace();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  useEffect(() => { loadCampaigns(); }, [loadCampaigns]);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => { loadCampaigns().finally(() => setLoaded(true)); }, [loadCampaigns]);
 
   return (
-    <Screen>
+    <Screen loading={!loaded}>
       <Txt muted>Your role here: {role ? ROLE_LABEL[role] : 'unknown'}</Txt>
       <ErrorBanner message={error} />
       {campaigns.length === 0 && <Txt muted>No campaigns yet. An Officer or Guildmaster can launch the first one.</Txt>}

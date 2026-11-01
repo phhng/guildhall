@@ -5,18 +5,20 @@ campaigns are projects, quests are tasks, and the War Room is a drag-and-drop da
 
 Runs on iOS, Android and the web from one Expo (React Native) codebase.
 
-**Status:** Phases 1 to 3 are complete. See `docs/PHASES.txt` for the full plan.
 Data is a mock, in-memory backend, so it resets when the app reloads.
 
 ## What you can do today
 
 - Sign up, build a character (class and avatar), and switch between dark and "Daylight Tavern" themes.
+- Edit your profile picture, banner, avatar icon, name and character class.
+- Browse earned and locked achievements in an interactive badge grid.
 - Found Guildhalls and launch Campaigns.
 - Arrange the War Room: move and resize widgets on a snap-to-grid layout, with other widgets pushed out of the way.
 - Quest Board: add quests and drag them between Backlog, In Progress, In Review and Slain.
 - Dice Roller: roll d4 to d20, or roll to assign the next Backlog quest to a party member.
 - Party Roster: see your party, their classes and roles.
 - Initiative Tracker, Boss Fight, Campaign Journal, Calendar of Sessions, XP and Achievements, and Activity Feed.
+- A loading cover on navigation that waits for destination data before revealing the page.
 - Spellbook: add or remove widgets. Undo and redo layout changes.
 
 ## Requirements

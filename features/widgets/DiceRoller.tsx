@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { ErrorBanner, GoldButton, Txt } from '@/components/ui';
+import { GoldButton, Txt } from '@/components/ui';
 import { useCampaignData } from '@/features/warroom/useCampaignData';
 import { api } from '@/services';
 import { errorMessage } from '@/services/errors';
@@ -14,7 +14,7 @@ const DICE = [4, 6, 8, 10, 12, 20];
 
 export function DiceRoller({ campaignId }: WidgetProps) {
   const { c, fonts, radius } = useTheme();
-  const { quests, members, error, setError } = useCampaignData(campaignId);
+  const { quests, members, setError } = useCampaignData(campaignId);
   const [sides, setSides] = useState(20);
   const [assign, setAssign] = useState(false);
   const [shown, setShown] = useState<number | null>(null);
@@ -52,7 +52,6 @@ export function DiceRoller({ campaignId }: WidgetProps) {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 10, gap: 10 }}>
-      <ErrorBanner message={error} />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {DICE.map((d) => (
           <Pressable key={d} accessibilityRole="radio" accessibilityLabel={`d${d}`} accessibilityState={{ selected: !assign && d === sides }} onPress={() => { setAssign(false); setSides(d); }}

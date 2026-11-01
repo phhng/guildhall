@@ -1,1 +1,24 @@
-{"expo":{"name":"Guildhall","slug":"guildhall","scheme":"guildhall","version":"0.1.0","orientation":"default","userInterfaceStyle":"automatic","newArchEnabled":true,"plugins":["expo-router","expo-secure-store","expo-font"],"web":{"bundler":"metro","output":"single"}}}
+{
+  "expo": {
+    "name": "Guildhall",
+    "slug": "guildhall",
+    "scheme": "guildhall",
+    "version": "0.1.0",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Guildhall to use a photo for your profile portrait or banner.",
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "web": { "bundler": "metro", "output": "single" }
+  }
+}
